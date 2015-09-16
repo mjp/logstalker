@@ -131,6 +131,10 @@ func parseTableNameForRails(lineData map[string]bigquery.JsonValue) {
 }
 
 func parseRawRequest(lineData map[string]bigquery.JsonValue) {
+	if lineData["request"] == nil {
+	  return
+	}
+
 	requestPieces := strings.Split(lineData["request"].(string), " ")
 
 	if len(requestPieces) == 3 {
