@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/tail"
 )
@@ -47,7 +48,10 @@ func main() {
 	})
 
 	for line := range t.Lines {
-		go stream(&config, tabledataService, parserFn(config.Host, line.Text))
+		parsed, err := parserFn(config.Host, strings.Replace(line.Text, "\\", "", -1))
+		if err == nil {
+			go stream(&config, tabledataService, parsed)
+		}
 	}
 }
 

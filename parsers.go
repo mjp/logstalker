@@ -11,8 +11,8 @@ import (
 
 const bigQueryTimeFormat = "2006-01-02 15:04:05"
 
-func parsingFunctionForType(parserType string) (func(string, string) map[string]bigquery.JsonValue, error) {
-	parsers := map[string]func(string, string) map[string]bigquery.JsonValue{
+func parsingFunctionForType(parserType string) (func(string, string) (map[string]bigquery.JsonValue, error), error) {
+	parsers := map[string]func(string, string) (map[string]bigquery.JsonValue, error){
 		"nginx-access": parseNginxAccessLine,
 		"nginx-error":  parseNginxErrorLine,
 		"rails":        parseRailsLine,
@@ -25,19 +25,22 @@ func parsingFunctionForType(parserType string) (func(string, string) map[string]
 	return nil, errors.New("Parser type not supported.")
 }
 
-func parseNginxAccessLine(host, logLine string) map[string]bigquery.JsonValue {
+func parseNginxAccessLine(host, logLine string) (map[string]bigquery.JsonValue, error) {
 	lineData := make(map[string]bigquery.JsonValue)
-	json.Unmarshal([]byte(logLine), &lineData)
+	if err := json.Unmarshal([]byte(logLine), &lineData); err != nil {
+		return lineData, err
+	}
 
 	lineData["host"] = host
 	lineData["log_type"] = "nginx-access"
+
 	parseRawRequest(lineData)
 	parseNginxAccessTimestamp(lineData)
 
-	return lineData
+	return lineData, nil
 }
 
-func parseNginxErrorLine(host, logLine string) map[string]bigquery.JsonValue {
+func parseNginxErrorLine(host, logLine string) (map[string]bigquery.JsonValue, error) {
 	lineData := make(map[string]bigquery.JsonValue)
 
 	errorPieces := strings.Split(logLine, ", ")
@@ -71,18 +74,20 @@ func parseNginxErrorLine(host, logLine string) map[string]bigquery.JsonValue {
 	lineData["host"] = host
 	lineData["log_type"] = "nginx-error"
 
-	return lineData
+	return lineData, nil
 }
 
-func parseRailsLine(host, logLine string) map[string]bigquery.JsonValue {
+func parseRailsLine(host, logLine string) (map[string]bigquery.JsonValue, error) {
 	lineData := make(map[string]bigquery.JsonValue)
-	json.Unmarshal([]byte(logLine), &lineData)
+	if err := json.Unmarshal([]byte(logLine), &lineData); err != nil {
+		return lineData, err
+	}
 
 	lineData["host"] = host
 	lineData["log_type"] = "rails"
 	parseTableNameForRails(lineData)
 
-	return lineData
+	return lineData, nil
 }
 
 func parseNginxErrorHeader(header string, lineData map[string]bigquery.JsonValue) {
@@ -131,10 +136,6 @@ func parseTableNameForRails(lineData map[string]bigquery.JsonValue) {
 }
 
 func parseRawRequest(lineData map[string]bigquery.JsonValue) {
-	if lineData["request"] == nil {
-	  return
-	}
-
 	requestPieces := strings.Split(lineData["request"].(string), " ")
 
 	if len(requestPieces) == 3 {
