@@ -37,7 +37,7 @@ Rails logs (with `logstalker_rails` installed):
 
 ## Nginx Access Log Formatting
 
-The logstalker Nginx log format outputs log entries as JSON:
+The Nginx log format outputs log entries as JSON:
 
     log_format logstalker '{"ip":"$remote_addr", "timestamp":"$time_local",'
                           '"domain":"$http_host", "request":"$request", "status":$status,'
