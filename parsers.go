@@ -37,6 +37,12 @@ func parseNginxAccessLine(host, logLine string) (map[string]bigquery.JsonValue, 
 	parseRawRequest(lineData)
 	parseNginxAccessTimestamp(lineData)
 
+	for k, v := range lineData {
+		if v == "-" || v == "" {
+			delete(lineData, k)
+		}
+	}
+
 	return lineData, nil
 }
 
